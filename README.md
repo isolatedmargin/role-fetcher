@@ -4,9 +4,9 @@ A powerful, production-ready API that checks Discord role membership across mult
 
 ## 🚀 Live Demo
 
-**Demo Website**: [Your Vercel URL]/multi-guild-demo.html
+**Demo Website**: https://discord-role-checker.vercel.app/multi-guild-demo.html
 
-**API Base URL**: [Your Vercel URL]
+**API Base URL**: https://discord-role-checker.vercel.app
 
 ## ✨ Features
 
@@ -135,7 +135,7 @@ git push origin main
 
 <script>
 function checkDiscordRoles() {
-    window.location.href = 'https://your-app.vercel.app/login';
+    window.location.href = 'https://discord-role-checker.vercel.app/login';
 }
 </script>
 ```
@@ -146,7 +146,7 @@ function checkDiscordRoles() {
 import { Linking } from 'react-native';
 
 const checkDiscordRoles = () => {
-    Linking.openURL('https://your-app.vercel.app/login');
+    Linking.openURL('https://discord-role-checker.vercel.app/login');
 };
 
 <Button title="Check Discord Roles" onPress={checkDiscordRoles} />
@@ -156,10 +156,10 @@ const checkDiscordRoles = () => {
 
 ```bash
 # Health check
-curl https://your-app.vercel.app/health
+curl https://discord-role-checker.vercel.app/health
 
 # Check specific guild role
-curl -X POST https://your-app.vercel.app/check-role/nads \
+curl https://discord-role-checker.vercel.app/check-role/nads \
   -H "Content-Type: application/json" \
   -d '{"accessToken": "your_token_here"}'
 ```
@@ -245,7 +245,7 @@ CLIENT_ID=1404438843112820756
 CLIENT_SECRET=your_client_secret_here
 
 # OAuth2
-REDIRECT_URI=https://your-domain.com/callback
+REDIRECT_URI=https://discord-role-checker.vercel.app/callback
 
 # Guilds (automatically configured)
 GUILD_ID_NADS=1036357772826120242
@@ -264,7 +264,7 @@ SESSION_SECRET=your_secure_session_secret
 
 - **Application ID**: `1404438843112820756`
 - **Required Scopes**: `identify`, `guilds.members.read`
-- **Redirect URLs**: Your Vercel domain + `/callback`
+- **Redirect URLs**: https://discord-role-checker.vercel.app/callback
 
 ## 🧪 Testing
 
@@ -277,7 +277,7 @@ SESSION_SECRET=your_secure_session_secret
 ### Production Testing
 
 1. Deploy to Vercel
-2. Open: `https://your-app.vercel.app/multi-guild-demo.html`
+2. Open: `https://discord-role-checker.vercel.app/multi-guild-demo.html`
 3. Test OAuth2 flow with real Discord accounts
 
 ## 🚨 Error Handling

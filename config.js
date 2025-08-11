@@ -4,7 +4,7 @@ module.exports = {
   CLIENT_SECRET: 'KflrC5F8aynL8P348qLacIq_nM2-mB0_',
   
   // OAuth2 Configuration
-  REDIRECT_URI: 'http://localhost:3000/callback',
+  REDIRECT_URI: 'https://discord-role-checker.vercel.app/callback',
   
   // Multiple Guild and Role Configurations
   GUILDS: {

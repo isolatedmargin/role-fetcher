@@ -46,10 +46,5 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  },
-  "functions": {
-    "multi-guild-api.js": {
-      "maxDuration": 30
-    }
   }
 }
