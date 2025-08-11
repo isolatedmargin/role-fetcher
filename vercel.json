@@ -40,6 +40,14 @@
       "dest": "/multi-guild-api.js"
     },
     {
+      "src": "/nft-access",
+      "dest": "/multi-guild-api.js"
+    },
+    {
+      "src": "/callback-clean",
+      "dest": "/multi-guild-api.js"
+    },
+    {
       "src": "/check-role/(.*)",
       "dest": "/multi-guild-api.js"
     },

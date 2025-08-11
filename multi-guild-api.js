@@ -41,7 +41,9 @@ app.get('/api', (req, res) => {
       '/check-role/:guild': 'POST - Check role for specific guild with access token',
       '/nads': 'GET - Check NADS role (guild: 1036357772826120242, role: 1051562453495971941)',
       '/slmnd': 'GET - Check SLMND Riverborn role (guild: 1325852385054031902, role: 1329565499335381033)',
-      '/lamouch': 'GET - Check LAMOUCH Mouch OG role (guild: 1329166769566388264, role: 1337881787409371372)'
+      '/lamouch': 'GET - Check LAMOUCH Mouch OG role (guild: 1329166769566388264, role: 1337881787409371372)',
+      '/nft-access': 'GET - Check if user can mint NFT (requires NADS role)',
+      '/callback-clean': 'GET - Clean OAuth2 callback returning simple boolean for NFT access'
     },
     guilds: config.GUILDS
   });
@@ -253,6 +255,108 @@ app.post('/check-role/:guild', async (req, res) => {
   }
 });
 
+// New clean endpoint for NFT minting
+app.get('/nft-access', async (req, res) => {
+    try {
+        // Check if user has NADS role (required for NFT minting)
+        const nadsResponse = await axios.get(`${config.DISCORD_API}/users/@me/guilds/${config.GUILDS.NADS.id}/member`, {
+            headers: {
+                Authorization: `Bearer ${req.query.accessToken || req.headers.authorization?.replace('Bearer ', '')}`
+            }
+        });
+
+        const hasNADSRole = nadsResponse.data.roles.includes(config.GUILDS.NADS.roleId);
+        
+        if (hasNADSRole) {
+            res.json({
+                canMint: true,
+                message: "Access granted: You can mint this NFT"
+            });
+        } else {
+            res.json({
+                canMint: false,
+                message: "Access denied: NADS role required"
+            });
+        }
+    } catch (error) {
+        console.error('Error checking NFT access:', error.response?.data || error.message);
+        
+        // Return clean error response
+        res.json({
+            canMint: false,
+            message: "Access denied: Unable to verify Discord role"
+        });
+    }
+});
+
+// Clean callback endpoint that returns simple boolean
+app.get('/callback-clean', async (req, res) => {
+    const { code } = req.query;
+    
+    if (!code) {
+        return res.json({
+            canMint: false,
+            message: "Authentication failed: No authorization code"
+        });
+    }
+
+    try {
+        // Exchange code for access token
+        const tokenResponse = await axios.post(`${config.DISCORD_API}/oauth2/token`, new URLSearchParams({
+            client_id: config.CLIENT_ID,
+            client_secret: config.CLIENT_SECRET,
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: config.REDIRECT_URI
+        }), {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+
+        const accessToken = tokenResponse.data.access_token;
+
+        // Check NADS role specifically for NFT minting
+        try {
+            const memberResponse = await axios.get(`${config.DISCORD_API}/users/@me/guilds/${config.GUILDS.NADS.id}/member`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            });
+
+            const hasNADSRole = memberResponse.data.roles.includes(config.GUILDS.NADS.roleId);
+            
+            if (hasNADSRole) {
+                res.json({
+                    canMint: true,
+                    message: "Access granted: You can mint this NFT",
+                    accessToken: accessToken
+                });
+            } else {
+                res.json({
+                    canMint: false,
+                    message: "Access denied: NADS role required",
+                    accessToken: accessToken
+                });
+            }
+        } catch (guildError) {
+            // User not in guild or other error
+            res.json({
+                canMint: false,
+                message: "Access denied: NADS role required",
+                accessToken: accessToken
+            });
+        }
+
+    } catch (error) {
+        console.error('OAuth2 error:', error.response?.data || error.message);
+        res.json({
+            canMint: false,
+            message: "Authentication failed: Could not verify Discord account"
+        });
+    }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
@@ -270,6 +374,7 @@ app.use('*', (req, res) => {
     availableEndpoints: [
       '/health', '/api', '/login', '/callback',
       '/nads', '/slmnd', '/lamouch',
+      '/nft-access', '/callback-clean',
       'POST /check-role/:guild'
     ]
   });
