@@ -51,9 +51,12 @@ app.get('/api', (req, res) => {
 
 // Login endpoint - redirects to Discord OAuth2
 app.get('/login', (req, res) => {
+  const { redirect } = req.query;
+  const redirectUri = redirect ? `${config.REDIRECT_URI}?redirect=${encodeURIComponent(redirect)}` : config.REDIRECT_URI;
+  
   const params = new URLSearchParams({
     client_id: config.CLIENT_ID,
-    redirect_uri: config.REDIRECT_URI,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: config.SCOPES.join(' ')
   });
@@ -64,7 +67,7 @@ app.get('/login', (req, res) => {
 
 // OAuth2 callback - checks roles across ALL guilds
 app.get('/callback', async (req, res) => {
-  const { code } = req.query;
+  const { code, redirect } = req.query;
   
   if (!code) {
     return res.status(400).json({ 
@@ -89,73 +92,55 @@ app.get('/callback', async (req, res) => {
 
     const { access_token } = tokenResponse.data;
     
-    // Check roles across all guilds
-    const results = {};
+    // Check NADS role specifically for NFT minting
+    let canMint = false;
+    let message = "Access denied: NADS role required";
     
-    for (const [guildKey, guild] of Object.entries(config.GUILDS)) {
-      try {
-        const memberResponse = await axios.get(
-          `${config.DISCORD_API}/users/@me/guilds/${guild.id}/member`,
-          {
-            headers: {
-              Authorization: `Bearer ${access_token}`
-            }
+    try {
+      const memberResponse = await axios.get(
+        `${config.DISCORD_API}/users/@me/guilds/${config.GUILDS.NADS.id}/member`,
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`
           }
-        );
-
-        const memberData = memberResponse.data;
-        const hasRole = memberData.roles.includes(guild.roleId);
-        
-        results[guildKey] = {
-          guildId: guild.id,
-          guildName: guild.name,
-          roleId: guild.roleId,
-          roleName: guild.roleName,
-          hasRole: hasRole,
-          success: true
-        };
-      } catch (error) {
-        results[guildKey] = {
-          guildId: guild.id,
-          guildName: guild.name,
-          roleId: guild.roleId,
-          roleName: guild.roleName,
-          hasRole: false,
-          success: false,
-          error: error.response?.data?.message || 'Failed to check role'
-        };
-      }
+        }
+      );
+      
+      canMint = memberResponse.data.roles.includes(config.GUILDS.NADS.roleId);
+      message = canMint ? "Access granted: You can mint this NFT" : "Access denied: NADS role required";
+      
+    } catch (error) {
+      console.error('Error checking NADS role:', error.response?.data || error.message);
+      canMint = false;
+      message = "Access denied: Unable to verify Discord role";
     }
     
-    // Return comprehensive results
-    res.json({
-      success: true,
-      results: results,
-      summary: {
-        totalGuilds: Object.keys(config.GUILDS).length,
-        rolesHeld: Object.values(results).filter(r => r.hasRole).length,
-        totalRoles: Object.keys(config.GUILDS).length
-      }
-    });
-
+    // If redirect parameter is provided, redirect back to the website with clean result
+    if (redirect) {
+      const redirectUrl = `${redirect}?canMint=${canMint}&message=${encodeURIComponent(message)}`;
+      res.redirect(redirectUrl);
+    } else {
+      // Return clean JSON response
+      res.json({
+        canMint,
+        message,
+        accessToken: access_token
+      });
+    }
+    
   } catch (error) {
-    console.error('API Error:', error.response?.data || error.message);
+    console.error('OAuth2 error:', error.response?.data || error.message);
     
-    let errorMessage = 'Failed to authenticate';
-    let statusCode = 500;
-    
-    if (error.response?.status === 400) {
-      errorMessage = 'Invalid authorization code';
-      statusCode = 400;
-    } else if (error.response?.status === 429) {
-      errorMessage = 'Rate limited - try again later';
-      statusCode = 429;
+    if (redirect) {
+      const errorMessage = "Authentication failed: Could not verify Discord account";
+      const redirectUrl = `${redirect}?canMint=false&message=${encodeURIComponent(errorMessage)}`;
+      res.redirect(redirectUrl);
+    } else {
+      res.status(500).json({ 
+        error: 'Failed to exchange authorization code',
+        success: false 
+      });
     }
-    
-    res.status(statusCode).json({ 
-      success: false,
-      error: errorMessage
-    });
   }
 });
 

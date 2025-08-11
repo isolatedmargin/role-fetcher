@@ -487,55 +487,39 @@
         // Initialize particles
         createParticles();
 
-        // Check if we're returning from OAuth2 callback
+        // Check if we're returning from OAuth2 callback with clean parameters
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('code')) {
-            // We have an authorization code, use the clean callback
-            handleOAuth2Callback(urlParams.get('code'));
+        if (urlParams.get('canMint') !== null) {
+            // We have clean minting result from redirect
+            handleCleanCallback(urlParams.get('canMint'), urlParams.get('message'));
         }
 
-        async function handleOAuth2Callback(code) {
-            showMessage('🔐 Authenticating with Discord...', 'info');
+        function handleCleanCallback(canMint, message) {
+            // Store the clean result
+            localStorage.setItem('nftAccess', JSON.stringify({
+                canMint: canMint === 'true',
+                message: message
+            }));
             
-            try {
-                // Use the clean callback endpoint
-                const response = await fetch(`${API_BASE}/callback-clean?code=${code}`);
-                const result = await response.json();
-                
-                if (result.canMint !== undefined) {
-                    // Store the clean result
-                    localStorage.setItem('nftAccess', JSON.stringify({
-                        canMint: result.canMint,
-                        message: result.message,
-                        accessToken: result.accessToken
-                    }));
-                    
-                    // Update state
-                    isAuthenticated = true;
-                    userRoles = { canMint: result.canMint };
-                    
-                    // Update UI
-                    updateMintButton();
-                    
-                    // Close modal if open
-                    closeAuthModal();
-                    
-                    // Show result message
-                    if (result.canMint) {
-                        showMessage('✅ ' + result.message, 'success');
-                    } else {
-                        showMessage('❌ ' + result.message, 'error');
-                    }
-                    
-                    // Clear URL parameters
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                } else {
-                    showMessage('❌ Authentication failed', 'error');
-                }
-            } catch (error) {
-                console.error('Authentication failed:', error);
-                showMessage('❌ Authentication failed: ' + error.message, 'error');
+            // Update state
+            isAuthenticated = true;
+            userRoles = { canMint: canMint === 'true' };
+            
+            // Update UI
+            updateMintButton();
+            
+            // Close modal if open
+            closeAuthModal();
+            
+            // Show result message
+            if (canMint === 'true') {
+                showMessage('✅ ' + message, 'success');
+            } else {
+                showMessage('❌ ' + message, 'error');
             }
+            
+            // Clear URL parameters
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
 
         // Update mint button based on clean authentication status
@@ -606,8 +590,10 @@
             mintBtn.innerHTML = '<span class="loading"></span>Connecting to Discord...';
             mintBtn.classList.add('loading');
 
-            // Redirect to Discord OAuth2
-            window.location.href = `${API_BASE}/login`;
+            // Redirect to Discord OAuth2 with custom state to redirect back
+            const currentUrl = window.location.origin + window.location.pathname;
+            const loginUrl = `${API_BASE}/login?redirect=${encodeURIComponent(currentUrl)}`;
+            window.location.href = loginUrl;
         }
 
         // Proceed with NFT minting
