@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Guild Discord Role Checker - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #2c2f33;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            color: #7289da;
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .guild-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .guild-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .guild-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .guild-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #7289da, #5865f2);
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            font-weight: bold;
+        }
+
+        .guild-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c2f33;
+            margin-bottom: 0.5rem;
+        }
+
+        .guild-role {
+            color: #7289da;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .guild-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.5rem 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 600;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #7289da, #5865f2);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0.5rem;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(114, 137, 218, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #e83e8c);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-pending {
+            background: #ffc107;
+        }
+
+        .status-success {
+            background: #28a745;
+        }
+
+        .status-error {
+            background: #dc3545;
+        }
+
+        .result-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-section h3 {
+            color: #2c2f33;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid #7289da;
+        }
+
+        .result-item.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .result-item.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #2c2f33;
+        }
+
+        .result-details {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #7289da, #5865f2);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .api-testing {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .api-testing h3 {
+            color: #2c2f33;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .endpoint-list {
+            background: #2c2f33;
+            color: #fff;
+            padding: 1.5rem;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+        }
+
+        .endpoint-item {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #7289da;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            border: 1px solid #c3e6cb;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .guild-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 Multi-Guild Discord Role Checker</h1>
+        <p>Test your Discord role membership across multiple servers in real-time!</p>
+    </div>
+
+    <div class="container">
+        <!-- Guild Cards -->
+        <div class="guild-grid">
+            <div class="guild-card">
+                <div class="guild-icon">N</div>
+                <div class="guild-name">NADS</div>
+                <div class="guild-role">NADS Role</div>
+                <div class="guild-info">
+                    <div class="info-row">
+                        <span class="info-label">Guild ID:</span>
+                        <span class="info-value">1036357772826120242</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Role ID:</span>
+                        <span class="info-value">1051562453495971941</span>
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="checkGuildRole('NADS')">
+                    <span class="status-indicator status-pending" id="nads-status"></span>
+                    Check NADS Role
+                </button>
+            </div>
+
+            <div class="guild-card">
+                <div class="guild-icon">S</div>
+                <div class="guild-name">SLMND</div>
+                <div class="guild-role">Riverborn</div>
+                <div class="guild-info">
+                    <div class="info-row">
+                        <span class="info-label">Guild ID:</span>
+                        <span class="info-value">1325852385054031902</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Role ID:</span>
+                        <span class="info-value">1329565499335381033</span>
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="checkGuildRole('SLMND')">
+                    <span class="status-indicator status-pending" id="slmnd-status"></span>
+                    Check Riverborn Role
+                </button>
+            </div>
+
+            <div class="guild-card">
+                <div class="guild-icon">L</div>
+                <div class="guild-name">LAMOUCH</div>
+                <div class="guild-role">Mouch OG</div>
+                <div class="guild-info">
+                    <div class="info-row">
+                        <span class="info-label">Guild ID:</span>
+                        <span class="info-value">1329166769566388264</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Role ID:</span>
+                        <span class="info-value">1337881787409371372</span>
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="checkGuildRole('LAMOUCH')">
+                    <span class="status-indicator status-pending" id="lamouch-status"></span>
+                    Check Mouch OG Role
+                </button>
+            </div>
+        </div>
+
+        <!-- OAuth2 Flow Section -->
+        <div class="result-section">
+            <h3>🔐 Complete OAuth2 Authentication</h3>
+            <p>Check all your roles across all guilds with one Discord login:</p>
+            <button class="btn btn-warning" onclick="startOAuth2Flow()">
+                🔐 Login with Discord & Check All Roles
+            </button>
+            <div id="oauth2Result" style="margin-top: 1rem;"></div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="result-section" id="resultsSection" style="display: none;">
+            <h3>📊 Role Check Results</h3>
+            <div id="summaryStats" class="summary-stats"></div>
+            <div id="detailedResults" class="result-grid"></div>
+        </div>
+
+        <!-- API Testing Section -->
+        <div class="api-testing">
+            <h3>🧪 API Endpoint Testing</h3>
+            <p>Test individual API endpoints:</p>
+            
+            <div class="endpoint-list">
+                <div class="endpoint-item">
+                    <strong>GET /health</strong> - Health check and configuration
+                </div>
+                <div class="endpoint-item">
+                    <strong>GET /api</strong> - API documentation
+                </div>
+                <div class="endpoint-item">
+                    <strong>GET /nads</strong> - NADS guild info
+                </div>
+                <div class="endpoint-item">
+                    <strong>GET /slmnd</strong> - SLMND guild info
+                </div>
+                <div class="endpoint-item">
+                    <strong>GET /lamouch</strong> - LAMOUCH guild info
+                </div>
+                <div class="endpoint-item">
+                    <strong>POST /check-role/:guild</strong> - Check specific guild role
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" onclick="testHealthEndpoint()">Test Health</button>
+            <button class="btn btn-secondary" onclick="testApiDocs()">Test API Docs</button>
+            <button class="btn btn-secondary" onclick="testGuildEndpoints()">Test Guild Endpoints</button>
+            
+            <div id="apiTestResults" style="margin-top: 1rem;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000';
+        let currentResults = {};
+
+        // Check individual guild role
+        async function checkGuildRole(guildName) {
+            const statusElement = document.getElementById(`${guildName.toLowerCase()}-status`);
+            const button = event.target;
+            
+            // Show loading
+            statusElement.className = 'status-indicator status-pending';
+            button.disabled = true;
+            button.innerHTML = `<span class="loading"></span>Checking...`;
+
+            try {
+                const response = await fetch(`${API_BASE}/check-role/${guildName.toLowerCase()}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ accessToken: 'demo' }) // This will fail, but shows the endpoint
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusElement.className = 'status-indicator status-success';
+                    showMessage(`✅ ${guildName} role check successful!`, 'success');
+                } else {
+                    statusElement.className = 'status-indicator status-error';
+                    showMessage(`❌ ${guildName} role check failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                statusElement.className = 'status-indicator status-error';
+                showMessage(`❌ ${guildName} role check error: ${error.message}`, 'error');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = `<span class="status-indicator status-pending" id="${guildName.toLowerCase()}-status"></span>Check ${guildName} Role`;
+            }
+        }
+
+        // Start OAuth2 flow
+        function startOAuth2Flow() {
+            window.location.href = `${API_BASE}/login`;
+        }
+
+        // Test health endpoint
+        async function testHealthEndpoint() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                showApiTestResult('Health Check', data, 'success');
+            } catch (error) {
+                showApiTestResult('Health Check', { error: error.message }, 'error');
+            }
+        }
+
+        // Test API docs endpoint
+        async function testApiDocs() {
+            try {
+                const response = await fetch(`${API_BASE}/api`);
+                const data = await response.json();
+                
+                showApiTestResult('API Documentation', data, 'success');
+            } catch (error) {
+                showApiTestResult('API Documentation', { error: error.message }, 'error');
+            }
+        }
+
+        // Test guild endpoints
+        async function testGuildEndpoints() {
+            const guilds = ['nads', 'slmnd', 'lamouch'];
+            const results = {};
+            
+            for (const guild of guilds) {
+                try {
+                    const response = await fetch(`${API_BASE}/${guild}`);
+                    const data = await response.json();
+                    results[guild.toUpperCase()] = data;
+                } catch (error) {
+                    results[guild.toUpperCase()] = { error: error.message };
+                }
+            }
+            
+            showApiTestResult('Guild Endpoints', results, 'success');
+        }
+
+        // Show API test results
+        function showApiTestResult(title, data, type) {
+            const resultsDiv = document.getElementById('apiTestResults');
+            const className = type === 'success' ? 'success-message' : 'error-message';
+            
+            resultsDiv.innerHTML = `
+                <div class="${className}">
+                    <strong>${title}:</strong>
+                    <pre style="margin-top: 0.5rem; white-space: pre-wrap;">${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const resultDiv = document.getElementById('oauth2Result');
+            const className = type === 'success' ? 'success-message' : 'error-message';
+            
+            resultDiv.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+
+        // Check if we're returning from OAuth2 callback
+        window.addEventListener('load', () => {
+            // Check if we have results in URL params (for demo purposes)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('demo')) {
+                // Simulate results for demo
+                simulateResults();
+            }
+        });
+
+        // Simulate results for demo
+        function simulateResults() {
+            const mockResults = {
+                NADS: {
+                    guildId: '1036357772826120242',
+                    guildName: 'NADS',
+                    roleId: '1051562453495971941',
+                    roleName: 'NADS Role',
+                    hasRole: true,
+                    success: true
+                },
+                SLMND: {
+                    guildId: '1325852385054031902',
+                    guildName: 'SLMND',
+                    roleId: '1329565499335381033',
+                    roleName: 'Riverborn',
+                    hasRole: false,
+                    success: true
+                },
+                LAMOUCH: {
+                    guildId: '1329166769566388264',
+                    guildName: 'LAMOUCH',
+                    roleId: '1337881787409371372',
+                    roleName: 'Mouch OG',
+                    hasRole: true,
+                    success: true
+                }
+            };
+
+            displayResults(mockResults);
+        }
+
+        // Display results
+        function displayResults(results) {
+            currentResults = results;
+            
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Update summary stats
+            const totalGuilds = Object.keys(results).length;
+            const rolesHeld = Object.values(results).filter(r => r.hasRole).length;
+            
+            document.getElementById('summaryStats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${totalGuilds}</div>
+                    <div class="stat-label">Total Guilds</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${rolesHeld}</div>
+                    <div class="stat-label">Roles Held</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${totalGuilds - rolesHeld}</div>
+                    <div class="stat-label">Roles Missing</div>
+                </div>
+            `;
+            
+            // Update detailed results
+            const detailedResultsDiv = document.getElementById('detailedResults');
+            detailedResultsDiv.innerHTML = '';
+            
+            Object.entries(results).forEach(([guildName, result]) => {
+                const resultClass = result.hasRole ? 'success' : 'error';
+                const statusIcon = result.hasRole ? '✅' : '❌';
+                
+                detailedResultsDiv.innerHTML += `
+                    <div class="result-item ${resultClass}">
+                        <div class="result-title">${statusIcon} ${guildName} - ${result.roleName}</div>
+                        <div class="result-details">
+                            Guild ID: ${result.guildId}<br>
+                            Role ID: ${result.roleId}<br>
+                            Status: ${result.hasRole ? 'Has Role' : 'Missing Role'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Update guild card statuses
+            Object.entries(results).forEach(([guildName, result]) => {
+                const statusElement = document.getElementById(`${guildName.toLowerCase()}-status`);
+                if (statusElement) {
+                    statusElement.className = `status-indicator ${result.hasRole ? 'status-success' : 'status-error'}`;
+                }
+            });
+        }
+
+        // Auto-test health on page load
+        setTimeout(testHealthEndpoint, 1000);
+    </script>
+</body>
+</html>

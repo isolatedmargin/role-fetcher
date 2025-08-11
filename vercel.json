@@ -1,0 +1,55 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "multi-guild-api.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/multi-guild-api.js"
+    },
+    {
+      "src": "/health",
+      "dest": "/multi-guild-api.js"
+    },
+    {
+      "src": "/login",
+      "dest": "/multi-guild-api.js"
+    },
+    {
+      "src": "/callback",
+      "dest": "/multi-guild-api.js"
+    },
+    {
+      "src": "/nads",
+      "dest": "/multi-guild-api.js"
+    },
+    {
+      "src": "/slmnd",
+      "dest": "/multi-guild-api.js"
+    },
+    {
+      "src": "/lamouch",
+      "dest": "/multi-guild-api.js"
+    },
+    {
+      "src": "/check-role/(.*)",
+      "dest": "/multi-guild-api.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "multi-guild-api.js": {
+      "maxDuration": 30
+    }
+  }
+}
