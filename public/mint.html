@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mint - Discord Role Gated</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .supply-info {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .mint-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .mint-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .mint-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .mint-button.connecting {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status-message.success {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid rgba(46, 204, 113, 0.5);
+            color: #2ecc71;
+        }
+
+        .status-message.error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            color: #e74c3c;
+        }
+
+        .status-message.info {
+            background: rgba(52, 152, 219, 0.2);
+            border: 1px solid rgba(52, 152, 219, 0.5);
+            color: #3498db;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .popup {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .popup h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .popup p {
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .popup button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .popup button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Test Mint</h1>
+        <div class="supply-info">Supply: 6969</div>
+        
+        <button class="mint-button" id="mintBtn" onclick="startMint()">
+            🪙 Mint NFT
+        </button>
+        
+        <div class="status-message" id="statusMessage"></div>
+    </div>
+
+    <!-- Popup for mint results -->
+    <div class="popup-overlay" id="popupOverlay">
+        <div class="popup">
+            <h3 id="popupTitle">Mint Result</h3>
+            <p id="popupMessage">Processing your mint request...</p>
+            <button onclick="closePopup()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://discord-role-checker.vercel.app';
+        
+        // Check if user is returning from Discord OAuth2
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            
+            if (code) {
+                handleDiscordCallback(code);
+            }
+        });
+
+        function startMint() {
+            const mintBtn = document.getElementById('mintBtn');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            // Show connecting state
+            mintBtn.disabled = true;
+            mintBtn.classList.add('connecting');
+            mintBtn.innerHTML = '<span class="loading"></span>Connecting to Discord...';
+            
+            // Clear any previous status
+            statusMessage.style.display = 'none';
+            
+            // Redirect to Discord OAuth2
+            window.location.href = `${API_BASE}/login`;
+        }
+
+        async function handleDiscordCallback(code) {
+            try {
+                const mintBtn = document.getElementById('mintBtn');
+                
+                // Show processing state
+                mintBtn.innerHTML = '<span class="loading"></span>Checking your roles...';
+                
+                // Call Discord API to check roles
+                const response = await fetch(`${API_BASE}/callback?code=${code}`);
+                const results = await response.json();
+                
+                // Clear URL parameters
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                if (results.success) {
+                    // Check if user has NADS role
+                    const hasNADS = results.results.NADS?.hasRole || false;
+                    
+                    if (hasNADS) {
+                        showMintSuccess();
+                    } else {
+                        showMintDenied();
+                    }
+                } else {
+                    showMintError('Failed to verify Discord roles. Please try again.');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showMintError('Failed to connect to Discord. Please try again.');
+            } finally {
+                // Reset button state
+                const mintBtn = document.getElementById('mintBtn');
+                mintBtn.disabled = false;
+                mintBtn.classList.remove('connecting');
+                mintBtn.innerHTML = '🪙 Mint NFT';
+            }
+        }
+
+        function showMintSuccess() {
+            const popup = document.getElementById('popupOverlay');
+            const title = document.getElementById('popupTitle');
+            const message = document.getElementById('popupMessage');
+            
+            title.innerHTML = '✅ Mint Successful!';
+            title.style.color = '#27ae60';
+            message.innerHTML = 'You are a NAD in MONAD! You can mint this NFT.';
+            
+            popup.style.display = 'flex';
+        }
+
+        function showMintDenied() {
+            const popup = document.getElementById('popupOverlay');
+            const title = document.getElementById('popupTitle');
+            const message = document.getElementById('popupMessage');
+            
+            title.innerHTML = '❌ Mint Denied';
+            title.style.color = '#e74c3c';
+            message.innerHTML = 'You are not a NAD in MONAD or you don\'t hold any role from the community projects and neither you are in your whitelist slot so you can\'t mint.';
+            
+            popup.style.display = 'flex';
+        }
+
+        function showMintError(errorMessage) {
+            const popup = document.getElementById('popupOverlay');
+            const title = document.getElementById('popupTitle');
+            const message = document.getElementById('popupMessage');
+            
+            title.innerHTML = '⚠️ Error';
+            title.style.color = '#f39c12';
+            message.innerHTML = errorMessage;
+            
+            popup.style.display = 'flex';
+        }
+
+        function closePopup() {
+            document.getElementById('popupOverlay').style.display = 'none';
+        }
+
+        // Close popup when clicking outside
+        document.getElementById('popupOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePopup();
+            }
+        });
+    </script>
+</body>
+</html>
