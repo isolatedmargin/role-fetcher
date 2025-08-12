@@ -4,6 +4,14 @@ module.exports = {
     REDIRECT_URI: 'https://discord-role-checker.vercel.app/callback',
     SESSION_SECRET: process.env.SESSION_SECRET || 'your-session-secret-here',
     
+    // Discord API URLs
+    DISCORD_API: 'https://discord.com/api',
+    OAUTH2_AUTHORIZE: 'https://discord.com/api/oauth2/authorize',
+    OAUTH2_TOKEN: 'https://discord.com/api/oauth2/token',
+    
+    // OAuth2 Scopes
+    SCOPES: ['identify', 'guilds.members.read'],
+    
     // Multiple guilds and roles configuration
     GUILDS: {
         NADS: {
