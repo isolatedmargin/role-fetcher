@@ -112,18 +112,18 @@ app.get('/callback', async (req, res) => {
       message = "Access denied: Unable to verify Discord role";
     }
     
-    // Always redirect to the NFT website with clean result
-    const nftWebsiteUrl = 'https://discord-role-checker.vercel.app/nft-test.html';
-    const redirectUrl = `${nftWebsiteUrl}?canMint=${canMint}&message=${encodeURIComponent(message)}`;
+    // Always redirect to the mint website with clean result
+    const mintWebsiteUrl = 'https://discord-role-checker.vercel.app/mint.html';
+    const redirectUrl = `${mintWebsiteUrl}?canMint=${canMint}&message=${encodeURIComponent(message)}`;
     res.redirect(redirectUrl);
     
   } catch (error) {
     console.error('OAuth2 error:', error.response?.data || error.message);
     
-    // Always redirect to the NFT website with error result
-    const nftWebsiteUrl = 'https://discord-role-checker.vercel.app/nft-test.html';
+    // Always redirect to the mint website with error result
+    const mintWebsiteUrl = 'https://discord-role-checker.vercel.app/mint.html';
     const errorMessage = "Authentication failed: Could not verify Discord account";
-    const redirectUrl = `${nftWebsiteUrl}?canMint=false&message=${encodeURIComponent(errorMessage)}`;
+    const redirectUrl = `${mintWebsiteUrl}?canMint=false&message=${encodeURIComponent(errorMessage)}`;
     res.redirect(redirectUrl);
   }
 });

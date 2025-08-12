@@ -192,9 +192,15 @@
         window.addEventListener('load', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const code = urlParams.get('code');
+            const canMint = urlParams.get('canMint');
+            const message = urlParams.get('message');
             
             if (code) {
+                // Handle OAuth2 callback with code
                 handleDiscordCallback(code);
+            } else if (canMint !== null && message !== null) {
+                // Handle redirect from API with results
+                handleApiCallback(canMint === 'true', decodeURIComponent(message));
             }
         });
 
@@ -250,6 +256,14 @@
                 mintBtn.disabled = false;
                 mintBtn.classList.remove('connecting');
                 mintBtn.innerHTML = '🪙 Mint NFT';
+            }
+        }
+
+        function handleApiCallback(canMint, message) {
+            if (canMint) {
+                showMintSuccess();
+            } else {
+                showMintDenied();
             }
         }
 
