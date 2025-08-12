@@ -1,8 +1,8 @@
 module.exports = {
     CLIENT_ID: '1404438843112820756',
-    CLIENT_SECRET: 'ZGE9IEIi-FS28lubR_eWFqdDQqY78k0f',
-    REDIRECT_URI: 'https://discord-role-checker-r4yo0mj64-fdggfs-projects.vercel.app/callback',
-    SESSION_SECRET: 'debug-session-secret-2024',
+    CLIENT_SECRET: process.env.CLIENT_SECRET || 'YOUR_CLIENT_SECRET_HERE',
+    REDIRECT_URI: process.env.REDIRECT_URI || 'https://discord-role-checker-aj9prv9ho-fdggfs-projects.vercel.app/callback',
+    SESSION_SECRET: process.env.SESSION_SECRET || 'your-session-secret-here',
     
     // Discord API URLs
     DISCORD_API: 'https://discord.com/api',
