@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Role Checker - Basic Integration</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #5865F2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #4752C4;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+        .status.success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .status.info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        .role-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .role-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            text-align: center;
+        }
+        .role-card.has-role {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .role-card.no-role {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Discord Role Checker - Basic Integration</h1>
+        <p>This example shows the simplest way to integrate the Discord Role Checker API into your website.</p>
+        
+        <div class="step">
+            <h3>Step 1: Connect Discord</h3>
+            <p>Click the button below to authenticate with Discord and check your roles.</p>
+            <button class="btn" onclick="connectDiscord()" id="connect-btn">
+                🔐 Connect Discord
+            </button>
+        </div>
+        
+        <div class="step">
+            <h3>Step 2: View Results</h3>
+            <div id="results" style="display: none;">
+                <div class="status info">
+                    <strong>Authentication successful!</strong> Here are your Discord roles:
+                </div>
+                <div id="role-display"></div>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h3>Integration Code</h3>
+            <p>Here's the complete code to integrate this into your website:</p>
+            <div class="code-block">
+&lt;script&gt;
+const API_BASE = 'https://discord-role-checker.vercel.app';
+
+// Check if user is returning from Discord OAuth2
+window.addEventListener('load', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    
+    if (code) {
+        handleOAuth2Callback(code);
+    }
+});
+
+function connectDiscord() {
+    window.location.href = `${API_BASE}/login`;
+}
+
+async function handleOAuth2Callback(code) {
+    try {
+        const response = await fetch(`${API_BASE}/callback?code=${code}`);
+        const results = await response.json();
+        
+        if (results.success) {
+            displayUserRoles(results.results);
+            // Clear URL parameters
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            alert('Authentication failed: ' + results.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Authentication failed. Please try again.');
+    }
+}
+
+function displayUserRoles(userRoles) {
+    // Display roles in your UI
+    console.log('User roles:', userRoles);
+}
+&lt;/script&gt;
+            </div>
+        </div>
+        
+        <div class="step">
+            <h3>API Endpoints</h3>
+            <ul>
+                <li><strong>GET /login</strong> - Redirect to Discord OAuth2</li>
+                <li><strong>GET /callback</strong> - Handle OAuth2 callback</li>
+                <li><strong>GET /nads</strong> - Check NADS role</li>
+                <li><strong>GET /slmnd</strong> - Check SLMND role</li>
+                <li><strong>GET /lamouch</strong> - Check LAMOUCH role</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://discord-role-checker.vercel.app';
+        
+        // Check if user is returning from Discord OAuth2
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            
+            if (code) {
+                handleOAuth2Callback(code);
+            }
+        });
+        
+        function connectDiscord() {
+            const btn = document.getElementById('connect-btn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Redirecting...';
+            
+            window.location.href = `${API_BASE}/login`;
+        }
+        
+        async function handleOAuth2Callback(code) {
+            try {
+                const response = await fetch(`${API_BASE}/callback?code=${code}`);
+                const results = await response.json();
+                
+                if (results.success) {
+                    displayUserRoles(results.results);
+                    // Clear URL parameters
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } else {
+                    showError('Authentication failed: ' + results.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Authentication failed. Please try again.');
+            }
+        }
+        
+        function displayUserRoles(userRoles) {
+            const resultsDiv = document.getElementById('results');
+            const roleDisplay = document.getElementById('role-display');
+            
+            resultsDiv.style.display = 'block';
+            
+            let roleHtml = '<div class="role-grid">';
+            
+            Object.entries(userRoles).forEach(([guild, data]) => {
+                const statusClass = data.hasRole ? 'has-role' : 'no-role';
+                const statusIcon = data.hasRole ? '✅' : '❌';
+                
+                roleHtml += `
+                    <div class="role-card ${statusClass}">
+                        <h4>${data.guildName}</h4>
+                        <p>${data.roleName}</p>
+                        <strong>${statusIcon} ${data.hasRole ? 'Has Role' : 'No Role'}</strong>
+                    </div>
+                `;
+            });
+            
+            roleHtml += '</div>';
+            roleDisplay.innerHTML = roleHtml;
+            
+            // Re-enable button
+            const btn = document.getElementById('connect-btn');
+            btn.disabled = false;
+            btn.textContent = '🔐 Connect Discord';
+        }
+        
+        function showError(message) {
+            const resultsDiv = document.getElementById('results');
+            const roleDisplay = document.getElementById('role-display');
+            
+            resultsDiv.style.display = 'block';
+            roleDisplay.innerHTML = `
+                <div class="status error">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+            
+            // Re-enable button
+            const btn = document.getElementById('connect-btn');
+            btn.disabled = false;
+            btn.textContent = '🔐 Connect Discord';
+        }
+    </script>
+</body>
+</html>

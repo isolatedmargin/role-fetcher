@@ -1,202 +1,522 @@
-# 🎯 Multi-Guild Discord Role Checker API
+# 🔐 Discord Role Checker API
 
-A powerful, production-ready API that checks Discord role membership across multiple guilds using OAuth2 authentication. No bot required in your Discord servers!
+A production-ready API service that allows you to check Discord user roles across multiple guilds using OAuth2 authentication. Perfect for gating content, access control, and role-based features in your applications.
 
-## 🚀 Live Demo
+## 🚀 Live API
 
-**Demo Website**: https://discord-role-checker.vercel.app/multi-guild-demo.html
-
-**API Base URL**: https://discord-role-checker.vercel.app
+**Base URL**: `https://discord-role-checker.vercel.app`
 
 ## ✨ Features
 
-- **🔐 Multi-Guild Support**: Check roles across multiple Discord servers
-- **🚫 No Bot Required**: Works without adding bots to your Discord servers
-- **🔒 OAuth2 Authentication**: Secure Discord login and role verification
-- **📱 Real-time Results**: Instant role checking with comprehensive responses
-- **🎨 Beautiful Demo UI**: Interactive website to test all API endpoints
-- **⚡ Production Ready**: Deployed on Vercel with proper error handling
+- **Multi-Guild Support**: Check roles across multiple Discord servers
+- **OAuth2 Authentication**: Secure Discord user authentication
+- **Role Verification**: Verify specific roles in specific guilds
+- **Clean API Responses**: Simple boolean responses for easy integration
+- **Production Ready**: Deployed on Vercel with proper error handling
+- **Rate Limit Handling**: Graceful handling of Discord API rate limits
 
-## 🎯 Supported Guilds & Roles
+## 🎯 Use Cases
 
-| Guild | Guild ID | Role ID | Role Name |
-|-------|----------|----------|-----------|
-| **NADS** | `1036357772826120242` | `1051562453495971941` | NADS Role |
-| **SLMND** | `1325852385054031902` | `1329565499335381033` | Riverborn |
-| **LAMOUCH** | `1329166769566388264` | `1337881787409371372` | Mouch OG |
+- **Gated Content**: Restrict access based on Discord server membership
+- **Access Control**: Role-based permissions and features
+- **Community Platforms**: Verify Discord server membership
+- **Gaming Platforms**: Unlock features based on Discord roles
+- **Premium Services**: Different access levels for different roles
 
-## 📋 API Endpoints
+## 🔧 API Endpoints
 
-### Core Endpoints
+### **Authentication**
+- `GET /login` - Redirect to Discord OAuth2
+- `GET /callback` - OAuth2 callback (returns role results)
 
-- **`GET /health`** - Health check and configuration info
-- **`GET /api`** - Complete API documentation
-- **`GET /login`** - Redirect to Discord OAuth2
-- **`GET /callback`** - OAuth2 callback and role check for ALL guilds
+### **Role Checking**
+- `GET /nads` - Check NADS role (Guild: 1036357772826120242, Role: 1051562453495971941)
+- `GET /slmnd` - Check SLMND Riverborn role (Guild: 1325852385054031902, Role: 1329565499335381033)
+- `GET /lamouch` - Check LAMOUCH Mouch OG role (Guild: 1329166769566388264, Role: 1337881787409371372)
 
-### Individual Guild Endpoints
+### **Utility**
+- `GET /health` - API health check
+- `GET /api` - API documentation
 
-- **`GET /nads`** - NADS guild information
-- **`GET /slmnd`** - SLMND guild information
-- **`GET /lamouch`** - LAMOUCH guild information
+## 📱 Quick Start
 
-### Role Checking
+### **1. Basic Role Check**
 
-- **`POST /check-role/:guild`** - Check role for specific guild with access token
+```javascript
+// Check if user has NADS role
+const response = await fetch('https://discord-role-checker.vercel.app/nads', {
+    headers: {
+        'Authorization': 'Bearer USER_ACCESS_TOKEN'
+    }
+});
 
-## 🔐 How It Works
-
-1. **User clicks button** → Redirects to `/login`
-2. **Discord OAuth2** → User authorizes with required scopes
-3. **Callback** → Exchanges code for access token
-4. **Role Check** → Queries Discord API for all guilds
-5. **Results** → Returns comprehensive role status across all guilds
-
-## 🚀 Quick Start
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/yourusername/discord-role-checker.git
-cd discord-role-checker
+const result = await response.json();
+console.log(result.hasRole); // true/false
 ```
 
-### 2. Install Dependencies
+### **2. OAuth2 Flow Integration**
 
-```bash
-npm install
+```javascript
+// Step 1: Redirect user to Discord OAuth2
+function authenticateWithDiscord() {
+    window.location.href = 'https://discord-role-checker.vercel.app/login';
+}
+
+// Step 2: Handle callback (user will be redirected back with role results)
+// The callback will return comprehensive role information
 ```
 
-### 3. Configure Environment Variables
+## 🔐 OAuth2 Integration
 
-Copy `env.example` to `.env` and fill in your Discord credentials:
+### **Complete Flow Example**
 
-```bash
-cp env.example .env
-# Edit .env with your Discord Client Secret
+```javascript
+class DiscordRoleChecker {
+    constructor() {
+        this.apiBase = 'https://discord-role-checker.vercel.app';
+    }
+
+    // Start Discord authentication
+    authenticate() {
+        window.location.href = `${this.apiBase}/login`;
+    }
+
+    // Handle callback results (called when user returns from Discord)
+    async handleCallback(code) {
+        try {
+            const response = await fetch(`${this.apiBase}/callback?code=${code}`);
+            const results = await response.json();
+            
+            if (results.success) {
+                // Check specific roles
+                const hasNADS = results.results.NADS?.hasRole || false;
+                const hasSLMND = results.results.SLMND?.hasRole || false;
+                const hasLAMOUCH = results.results.LAMOUCH?.hasRole || false;
+                
+                return { hasNADS, hasSLMND, hasLAMOUCH };
+            }
+        } catch (error) {
+            console.error('Authentication failed:', error);
+        }
+    }
+}
 ```
 
-### 4. Run Locally
+## 🎨 Frontend Integration Examples
 
-```bash
-# Development mode
-npm run dev:multi
+### **React Component**
 
-# Production mode
-npm run multi-guild
+```jsx
+import React, { useState, useEffect } from 'react';
+
+const DiscordRoleGate = ({ children, requiredRoles = [] }) => {
+    const [userRoles, setUserRoles] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        checkAuthentication();
+    }, []);
+
+    const checkAuthentication = () => {
+        // Check if user is returning from Discord OAuth2
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code) {
+            handleOAuth2Callback(code);
+        } else {
+            setIsLoading(false);
+        }
+    };
+
+    const handleOAuth2Callback = async (code) => {
+        try {
+            const response = await fetch(`https://discord-role-checker.vercel.app/callback?code=${code}`);
+            const results = await response.json();
+            
+            if (results.success) {
+                setUserRoles(results.results);
+                // Clear URL parameters
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch (error) {
+            console.error('Authentication failed:', error);
+        }
+        setIsLoading(false);
+    };
+
+    const authenticateWithDiscord = () => {
+        window.location.href = 'https://discord-role-checker.vercel.app/login';
+    };
+
+    if (isLoading) return <div>Loading...</div>;
+
+    if (!userRoles) {
+        return (
+            <div>
+                <h2>🔒 Access Restricted</h2>
+                <p>Connect your Discord account to continue</p>
+                <button onClick={authenticateWithDiscord}>
+                    🔐 Connect Discord
+                </button>
+            </div>
+        );
+    }
+
+    // Check if user has required roles
+    const hasRequiredRole = requiredRoles.length === 0 || 
+        requiredRoles.some(role => userRoles[role]?.hasRole);
+
+    if (!hasRequiredRole) {
+        return (
+            <div>
+                <h2>❌ Access Denied</h2>
+                <p>You don't have the required Discord roles</p>
+            </div>
+        );
+    }
+
+    return <div>{children}</div>;
+};
+
+// Usage
+const App = () => (
+    <div>
+        <h1>My Website</h1>
+        
+        {/* Basic content - requires any Discord role */}
+        <DiscordRoleGate>
+            <h2>Basic Content</h2>
+            <p>Visible to authenticated Discord users</p>
+        </DiscordRoleGate>
+        
+        {/* Premium content - requires SLMND role */}
+        <DiscordRoleGate requiredRoles={['SLMND']}>
+            <h2>Premium Content</h2>
+            <p>Only visible to SLMND Riverborn members</p>
+        </DiscordRoleGate>
+    </div>
+);
 ```
 
-### 5. Test the API
+### **Vue.js Component**
 
-Visit `http://localhost:3000/multi-guild-demo.html` to test all endpoints!
-
-## 🌐 Deployment to Vercel
-
-### 1. Push to GitHub
-
-```bash
-git add .
-git commit -m "Initial commit: Multi-guild Discord role checker API"
-git push origin main
-```
-
-### 2. Deploy to Vercel
-
-1. **Install Vercel CLI**:
-   ```bash
-   npm install -g vercel
-   ```
-
-2. **Deploy**:
-   ```bash
-   vercel
-   ```
-
-3. **Set Environment Variables** in Vercel Dashboard:
-   - `CLIENT_ID`: `1404438843112820756`
-   - `CLIENT_SECRET`: Your Discord Client Secret
-   - `REDIRECT_URI`: `https://your-app.vercel.app/callback`
-   - `SESSION_SECRET`: A secure random string
-
-### 3. Update Discord OAuth2 Redirect
-
-1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
-2. Select your application (`1404438843112820756`)
-3. Go to **OAuth2** tab
-4. Add redirect URL: `https://your-app.vercel.app/callback`
-5. Save changes
-
-## 📱 Integration Examples
-
-### HTML/JavaScript
-
-```html
-<button onclick="checkDiscordRoles()">Check My Discord Roles</button>
+```vue
+<template>
+  <div>
+    <div v-if="!userRoles">
+      <h2>🔒 Access Restricted</h2>
+      <p>Connect your Discord account to continue</p>
+      <button @click="authenticateWithDiscord">
+        🔐 Connect Discord
+      </button>
+    </div>
+    
+    <div v-else-if="!hasRequiredRole">
+      <h2>❌ Access Denied</h2>
+      <p>You don't have the required Discord roles</p>
+    </div>
+    
+    <div v-else>
+      <slot />
+    </div>
+  </div>
+</template>
 
 <script>
-function checkDiscordRoles() {
-    window.location.href = 'https://discord-role-checker.vercel.app/login';
+export default {
+  name: 'DiscordRoleGate',
+  props: {
+    requiredRoles: {
+      type: Array,
+      default: () => []
+    }
+  },
+  data() {
+    return {
+      userRoles: null
+    }
+  },
+  computed: {
+    hasRequiredRole() {
+      if (this.requiredRoles.length === 0) return true;
+      return this.requiredRoles.some(role => 
+        this.userRoles[role]?.hasRole
+      );
+    }
+  },
+  mounted() {
+    this.checkAuthentication();
+  },
+  methods: {
+    checkAuthentication() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      
+      if (code) {
+        this.handleOAuth2Callback(code);
+      }
+    },
+    
+    async handleOAuth2Callback(code) {
+      try {
+        const response = await fetch(
+          `https://discord-role-checker.vercel.app/callback?code=${code}`
+        );
+        const results = await response.json();
+        
+        if (results.success) {
+          this.userRoles = results.results;
+          // Clear URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      } catch (error) {
+        console.error('Authentication failed:', error);
+      }
+    },
+    
+    authenticateWithDiscord() {
+      window.location.href = 'https://discord-role-checker.vercel.app/login';
+    }
+  }
 }
 </script>
 ```
 
-### React Native
+### **Vanilla JavaScript**
 
 ```javascript
-import { Linking } from 'react-native';
-
-const checkDiscordRoles = () => {
-    Linking.openURL('https://discord-role-checker.vercel.app/login');
-};
-
-<Button title="Check Discord Roles" onPress={checkDiscordRoles} />
-```
-
-### cURL
-
-```bash
-# Health check
-curl https://discord-role-checker.vercel.app/health
-
-# Check specific guild role
-curl https://discord-role-checker.vercel.app/check-role/nads \
-  -H "Content-Type: application/json" \
-  -d '{"accessToken": "your_token_here"}'
-```
-
-## 📊 API Response Examples
-
-### Health Check Response
-
-```json
-{
-  "status": "OK",
-  "timestamp": "2025-08-11T12:47:23.005Z",
-  "guilds": [
-    {
-      "name": "NADS",
-      "guildId": "1036357772826120242",
-      "roleId": "1051562453495971941",
-      "roleName": "NADS Role"
-    },
-    {
-      "name": "SLMND",
-      "guildId": "1325852385054031902",
-      "roleId": "1329565499335381033",
-      "roleName": "Riverborn"
-    },
-    {
-      "name": "LAMOUCH",
-      "guildId": "1329166769566388264",
-      "roleId": "1337881787409371372",
-      "roleName": "Mouch OG"
+class DiscordRoleChecker {
+    constructor() {
+        this.apiBase = 'https://discord-role-checker.vercel.app';
+        this.userRoles = null;
+        this.init();
     }
-  ],
-  "clientId": "1404438843112820756"
+
+    init() {
+        // Check if user is returning from Discord OAuth2
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code) {
+            this.handleOAuth2Callback(code);
+        }
+    }
+
+    async handleOAuth2Callback(code) {
+        try {
+            const response = await fetch(`${this.apiBase}/callback?code=${code}`);
+            const results = await response.json();
+            
+            if (results.success) {
+                this.userRoles = results.results;
+                this.onAuthenticationSuccess();
+                // Clear URL parameters
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch (error) {
+            console.error('Authentication failed:', error);
+            this.onAuthenticationError(error);
+        }
+    }
+
+    authenticate() {
+        window.location.href = `${this.apiBase}/login`;
+    }
+
+    hasRole(guildName) {
+        return this.userRoles?.[guildName]?.hasRole || false;
+    }
+
+    hasAnyRole(roleNames) {
+        return roleNames.some(role => this.hasRole(role));
+    }
+
+    hasAllRoles(roleNames) {
+        return roleNames.every(role => this.hasRole(role));
+    }
+
+    onAuthenticationSuccess() {
+        // Override this method to handle successful authentication
+        console.log('Discord authentication successful:', this.userRoles);
+    }
+
+    onAuthenticationError(error) {
+        // Override this method to handle authentication errors
+        console.error('Discord authentication failed:', error);
+    }
+}
+
+// Usage
+const roleChecker = new DiscordRoleChecker();
+
+// Check specific roles
+if (roleChecker.hasRole('NADS')) {
+    console.log('User has NADS role');
+}
+
+if (roleChecker.hasAnyRole(['SLMND', 'LAMOUCH'])) {
+    console.log('User has at least one premium role');
+}
+
+if (roleChecker.hasAllRoles(['NADS', 'SLMND'])) {
+    console.log('User has both NADS and SLMND roles');
 }
 ```
 
-### OAuth2 Callback Response
+## 🔧 Backend Integration
+
+### **Node.js/Express**
+
+```javascript
+const express = require('express');
+const axios = require('axios');
+
+const app = express();
+const API_BASE = 'https://discord-role-checker.vercel.app';
+
+// Middleware to check Discord authentication
+const requireDiscordAuth = async (req, res, next) => {
+    const { discordToken } = req.headers;
+    
+    if (!discordToken) {
+        return res.status(401).json({ error: 'Discord token required' });
+    }
+
+    try {
+        // Check user's NADS role
+        const response = await axios.get(`${API_BASE}/nads`, {
+            headers: {
+                Authorization: `Bearer ${discordToken}`
+            }
+        });
+
+        if (response.data.hasRole) {
+            req.userRoles = response.data;
+            next();
+        } else {
+            res.status(403).json({ error: 'Access denied - NADS role required' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to verify Discord role' });
+    }
+};
+
+// Protected route - requires NADS role
+app.get('/protected-content', requireDiscordAuth, (req, res) => {
+    res.json({
+        message: 'Access granted to protected content',
+        userRoles: req.userRoles
+    });
+});
+
+// Premium route - requires SLMND role
+app.get('/premium-content', async (req, res) => {
+    const { discordToken } = req.headers;
+    
+    try {
+        const response = await axios.get(`${API_BASE}/slmnd`, {
+            headers: {
+                Authorization: `Bearer ${discordToken}`
+            }
+        });
+
+        if (response.data.hasRole) {
+            res.json({
+                message: 'Access granted to premium content',
+                userRoles: response.data
+            });
+        } else {
+            res.status(403).json({ error: 'Access denied - SLMND role required' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to verify Discord role' });
+    }
+});
+```
+
+### **Python/Flask**
+
+```python
+from flask import Flask, request, jsonify
+import requests
+
+app = Flask(__name__)
+API_BASE = 'https://discord-role-checker.vercel.app'
+
+def require_discord_auth(f):
+    def decorated_function(*args, **kwargs):
+        discord_token = request.headers.get('Discord-Token')
+        
+        if not discord_token:
+            return jsonify({'error': 'Discord token required'}), 401
+        
+        try:
+            # Check user's NADS role
+            response = requests.get(f'{API_BASE}/nads', headers={
+                'Authorization': f'Bearer {discord_token}'
+            })
+            
+            if response.status_code == 200 and response.json().get('hasRole'):
+                return f(*args, **kwargs)
+            else:
+                return jsonify({'error': 'Access denied - NADS role required'}), 403
+                
+        except Exception as e:
+            return jsonify({'error': 'Failed to verify Discord role'}), 500
+    
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+@app.route('/protected-content')
+@require_discord_auth
+def protected_content():
+    return jsonify({
+        'message': 'Access granted to protected content',
+        'status': 'authenticated'
+    })
+
+@app.route('/premium-content')
+def premium_content():
+    discord_token = request.headers.get('Discord-Token')
+    
+    if not discord_token:
+        return jsonify({'error': 'Discord token required'}), 401
+    
+    try:
+        # Check SLMND role
+        response = requests.get(f'{API_BASE}/slmnd', headers={
+            'Authorization': f'Bearer {discord_token}'
+        })
+        
+        if response.status_code == 200 and response.json().get('hasRole'):
+            return jsonify({
+                'message': 'Access granted to premium content',
+                'status': 'premium'
+            })
+        else:
+            return jsonify({'error': 'Access denied - SLMND role required'}), 403
+            
+    except Exception as e:
+        return jsonify({'error': 'Failed to verify Discord role'}), 500
+```
+
+## 📊 API Response Format
+
+### **Role Check Response**
+
+```json
+{
+  "guildId": "1036357772826120242",
+  "guildName": "NADS",
+  "roleId": "1051562453495971941",
+  "roleName": "NADS Role",
+  "hasRole": true,
+  "success": true
+}
+```
+
+### **OAuth2 Callback Response**
 
 ```json
 {
@@ -235,92 +555,48 @@ curl https://discord-role-checker.vercel.app/check-role/nads \
 }
 ```
 
-## 🔧 Configuration
+## 🚀 Deployment
 
-### Environment Variables
+### **Vercel (Recommended)**
+
+1. **Fork this repository**
+2. **Connect to Vercel**
+3. **Set environment variables**:
+   - `CLIENT_ID` - Your Discord application client ID
+   - `CLIENT_SECRET` - Your Discord application client secret
+   - `REDIRECT_URI` - Your callback URL
+4. **Deploy**
+
+### **Environment Variables**
 
 ```bash
-# Discord Application
-CLIENT_ID=1404438843112820756
-CLIENT_SECRET=your_client_secret_here
-
-# OAuth2
-REDIRECT_URI=https://discord-role-checker.vercel.app/callback
-
-# Guilds (automatically configured)
-GUILD_ID_NADS=1036357772826120242
-ROLE_ID_NADS=1051562453495971941
-GUILD_ID_SLMND=1325852385054031902
-ROLE_ID_SLMND=1329565499335381033
-GUILD_ID_LAMOUCH=1329166769566388264
-ROLE_ID_LAMOUCH=1337881787409371372
-
-# Server
-PORT=3000
-SESSION_SECRET=your_secure_session_secret
+CLIENT_ID=your_discord_client_id
+CLIENT_SECRET=your_discord_client_secret
+REDIRECT_URI=https://yourdomain.com/callback
 ```
 
-### Discord Application Settings
+## 🔒 Security Considerations
 
-- **Application ID**: `1404438843112820756`
-- **Required Scopes**: `identify`, `guilds.members.read`
-- **Redirect URLs**: https://discord-role-checker.vercel.app/callback
+- **HTTPS Only**: Always use HTTPS in production
+- **Token Storage**: Store access tokens securely
+- **Rate Limiting**: Respect Discord API rate limits
+- **Error Handling**: Implement proper error handling
+- **User Consent**: Ensure users understand what data you're accessing
 
-## 🧪 Testing
+## 📚 Additional Resources
 
-### Local Testing
-
-1. Start the API: `npm run multi-guild`
-2. Open: `http://localhost:3000/multi-guild-demo.html`
-3. Test all endpoints interactively
-
-### Production Testing
-
-1. Deploy to Vercel
-2. Open: `https://discord-role-checker.vercel.app/multi-guild-demo.html`
-3. Test OAuth2 flow with real Discord accounts
-
-## 🚨 Error Handling
-
-### Common Error Responses
-
-- **403**: Access denied (user not in guild or lacks permissions)
-- **404**: User not a member of the guild
-- **429**: Rate limited (try again later)
-- **500**: Internal server error
-
-### Error Response Format
-
-```json
-{
-  "hasRole": false,
-  "error": "User not a member of this guild",
-  "success": false
-}
-```
-
-## 🔒 Security Features
-
-- **OAuth2 Authentication**: Secure Discord login
-- **Environment Variables**: Sensitive data protection
-- **CORS Protection**: Configurable cross-origin requests
-- **Rate Limiting**: Respects Discord API limits
-- **Error Handling**: No information leakage
-
-## 📈 Performance
-
-- **Response Time**: < 500ms for role checks
-- **Rate Limits**: 50 requests/second per Discord token
-- **Caching**: Built-in token management
-- **Scalability**: Serverless deployment on Vercel
+- **Discord Developer Portal**: https://discord.com/developers/applications
+- **Discord OAuth2 Documentation**: https://discord.com/developers/docs/topics/oauth2
+- **API Health Check**: https://discord-role-checker.vercel.app/health
+- **API Documentation**: https://discord-role-checker.vercel.app/api
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
 ## 📄 License
 
@@ -328,18 +604,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/discord-role-checker/issues)
-- **Discord**: Join our support server
-- **Documentation**: [API.md](API.md)
+If you need help integrating this API:
 
-## 🙏 Acknowledgments
-
-- **Discord API** for OAuth2 and role checking
-- **Vercel** for serverless hosting
-- **Express.js** for the web framework
+1. Check the [API documentation](https://discord-role-checker.vercel.app/api)
+2. Review the examples above
+3. Open an issue on GitHub
+4. Check the health endpoint: https://discord-role-checker.vercel.app/health
 
 ---
 
-**Made with ❤️ for the Discord community**
-
-*This API works without requiring bots in Discord servers by using Discord's OAuth2 API with the `guilds.members.read` scope.*
+**Ready to integrate Discord role checking into your application? Start with the examples above and customize them for your needs!** 🚀

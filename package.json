@@ -1,27 +1,52 @@
 {
   "name": "discord-role-checker",
-  "version": "1.0.0",
-  "description": "Discord OAuth2 bot to check if users have specific roles in a server",
-  "main": "index.js",
+  "version": "2.0.0",
+  "description": "A production-ready API service that allows you to check Discord user roles across multiple guilds using OAuth2 authentication",
+  "main": "multi-guild-api.js",
   "scripts": {
-    "start": "node index.js",
-    "api": "node api.js",
-    "multi-guild": "node multi-guild-api.js",
-    "dev": "nodemon index.js",
-    "dev:api": "nodemon api.js",
-    "dev:multi": "nodemon multi-guild-api.js"
+    "start": "node multi-guild-api.js",
+    "dev": "nodemon multi-guild-api.js",
+    "test": "echo \"No tests specified\" && exit 0",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "vercel-build": "echo \"Build completed\""
+  },
+  "keywords": [
+    "discord",
+    "oauth2",
+    "role-checker",
+    "api",
+    "authentication",
+    "guild",
+    "verification",
+    "access-control"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/discord-role-checker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/discord-role-checker/issues"
+  },
+  "homepage": "https://github.com/yourusername/discord-role-checker#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   },
   "dependencies": {
     "express": "^4.18.2",
     "axios": "^1.6.0",
-    "express-session": "^1.17.3",
-    "dotenv": "^16.3.1",
-    "cors": "^2.8.5"
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
   },
-  "keywords": ["discord", "oauth2", "bot", "role-checker"],
-  "author": "Your Name",
-  "license": "MIT"
+  "optionalDependencies": {
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0"
+  }
 }

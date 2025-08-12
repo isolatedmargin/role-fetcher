@@ -51,12 +51,9 @@ app.get('/api', (req, res) => {
 
 // Login endpoint - redirects to Discord OAuth2
 app.get('/login', (req, res) => {
-  const { redirect } = req.query;
-  const redirectUri = redirect ? `${config.REDIRECT_URI}?redirect=${encodeURIComponent(redirect)}` : config.REDIRECT_URI;
-  
   const params = new URLSearchParams({
     client_id: config.CLIENT_ID,
-    redirect_uri: redirectUri,
+    redirect_uri: config.REDIRECT_URI,
     response_type: 'code',
     scope: config.SCOPES.join(' ')
   });
@@ -67,7 +64,7 @@ app.get('/login', (req, res) => {
 
 // OAuth2 callback - checks roles across ALL guilds
 app.get('/callback', async (req, res) => {
-  const { code, redirect } = req.query;
+  const { code } = req.query;
   
   if (!code) {
     return res.status(400).json({ 
@@ -115,32 +112,19 @@ app.get('/callback', async (req, res) => {
       message = "Access denied: Unable to verify Discord role";
     }
     
-    // If redirect parameter is provided, redirect back to the website with clean result
-    if (redirect) {
-      const redirectUrl = `${redirect}?canMint=${canMint}&message=${encodeURIComponent(message)}`;
-      res.redirect(redirectUrl);
-    } else {
-      // Return clean JSON response
-      res.json({
-        canMint,
-        message,
-        accessToken: access_token
-      });
-    }
+    // Always redirect to the NFT website with clean result
+    const nftWebsiteUrl = 'https://discord-role-checker.vercel.app/nft-test.html';
+    const redirectUrl = `${nftWebsiteUrl}?canMint=${canMint}&message=${encodeURIComponent(message)}`;
+    res.redirect(redirectUrl);
     
   } catch (error) {
     console.error('OAuth2 error:', error.response?.data || error.message);
     
-    if (redirect) {
-      const errorMessage = "Authentication failed: Could not verify Discord account";
-      const redirectUrl = `${redirect}?canMint=false&message=${encodeURIComponent(errorMessage)}`;
-      res.redirect(redirectUrl);
-    } else {
-      res.status(500).json({ 
-        error: 'Failed to exchange authorization code',
-        success: false 
-      });
-    }
+    // Always redirect to the NFT website with error result
+    const nftWebsiteUrl = 'https://discord-role-checker.vercel.app/nft-test.html';
+    const errorMessage = "Authentication failed: Could not verify Discord account";
+    const redirectUrl = `${nftWebsiteUrl}?canMint=false&message=${encodeURIComponent(errorMessage)}`;
+    res.redirect(redirectUrl);
   }
 });
 
