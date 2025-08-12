@@ -1,7 +1,7 @@
 module.exports = {
     CLIENT_ID: '1404438843112820756',
-    CLIENT_SECRET: 'YOUR_CLIENT_SECRET_HERE', // You'll need to replace this with your actual secret
-    REDIRECT_URI: 'https://discord-role-checker-jio26p6v7-fdggfs-projects.vercel.app/callback',
+    CLIENT_SECRET: 'ZGE9IEIi-FS28lubR_eWFqdDQqY78k0f',
+    REDIRECT_URI: 'https://discord-role-checker-r4yo0mj64-fdggfs-projects.vercel.app/callback',
     SESSION_SECRET: 'debug-session-secret-2024',
     
     // Discord API URLs
